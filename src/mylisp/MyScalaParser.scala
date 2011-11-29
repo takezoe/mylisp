@@ -6,7 +6,7 @@ object MyLispParser extends App {
 
   val source = """
     (defun sayHello (name) (println "Hello " name "!"))
-    (defun sum (a b)(if (eq a b) a (sum (+ a 1) b)))
+    (defun sum (a b)(if (eql a b) a (sum (+ a 1) b)))
     (println (sum 1 1000))
   """
 
@@ -23,7 +23,7 @@ object MyLispParser extends App {
   env.set("-", operator2(_ - _))
   env.set("*", operator2(_ * _))
   env.set("/", operator2(_ / _))
-  env.set("eq", operator2(_ == _))
+  env.set("eql", operator2(_ == _))
 
   new ExprVisitor().visit(ast, env)
 
