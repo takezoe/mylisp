@@ -28,7 +28,7 @@ class MyLispVisitor() {
         }
       }
       case ASTIf(cond, expr1, expr2) => {
-        if(visit(cond, env) != Symbol.Nil){
+        if(visit(cond, env) != Symbol.NIL){
           visit(expr1, env)
         } else {
           visit(expr2, env)
@@ -45,12 +45,7 @@ class MyLispVisitor() {
       case ASTSetq(name, value) => {
         env.set(name.name, visit(value, env))
       }
-      case ASTSymbol(value) => {
-        value match {
-          case "nil" => Symbol.Nil
-          case "t"   => Symbol.T
-        }
-      }
+      case ASTSymbol(value) => Symbol.withName(value.toUpperCase())
     }
   }
 
