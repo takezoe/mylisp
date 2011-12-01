@@ -17,6 +17,27 @@ object Functions {
     env.set("<", operator2({ (a, b) => if(a < b) Symbol.T else Symbol.NIL }))
     env.set(">", operator2({ (a, b) => if(a > b) Symbol.T else Symbol.NIL }))
     env.set("list", { params: List[Any] => params })
+    env.set("listp", { params: List[Any] =>
+      params match {
+        case List(e) => e match {
+          case Symbol.NIL => Symbol.T
+          case list: List[Any] => Symbol.T
+          case _ => Symbol.NIL
+        }
+        case _ => throw new IllegalArgumentException(params.toString())
+      }
+    })
+    env.set("null", { params: List[Any] =>
+      params match {
+        case List(e) => e match {
+          case Symbol.NIL => Symbol.T
+          case list: List[Any] if list.isEmpty => Symbol.T
+          case _ => Symbol.NIL
+        }
+        case _ => throw new IllegalArgumentException(params.toString())
+      }
+    })
+    env.set("not", env.get("null"))
     env.set("cons", { params: List[Any] =>
       params match {
         case List(first: Any, list: List[Any]) => first :: list

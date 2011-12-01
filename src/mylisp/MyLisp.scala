@@ -30,8 +30,10 @@ object MyLisp extends App {
 
     (setq l (list 1 2 3 4))
     (println (cons 0 l))
-    (println (cdr (cons 0 l)))
-    (println (car (cons 0 l)))
+
+    (println (null nil))
+    (println (not '(1 2)))
+    (println (listp '(1 2 3)))
   """
 
   println(eval(source))
