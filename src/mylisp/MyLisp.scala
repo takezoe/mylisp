@@ -4,6 +4,7 @@ import scala.util.parsing.combinator.RegexParsers
 object MyLisp extends App {
 
   val source = """
+    ; recursive function
     (defun factorial (n acc)
       (if (<= n 1)
         acc
@@ -16,11 +17,14 @@ object MyLisp extends App {
 
     (println (factorial 10 1))
     (println (sum 10000 1))
+
     (println (+ 1 2 3 4))
 
+    ; variable
     (setq name "Naoki")
     (println name)
 
+    ; list operation
     (setq l '(1 2 3 4))
     (println l)
 
@@ -31,7 +35,7 @@ object MyLisp extends App {
   """
 
   val parser = new MyLispParser
-  val result = parser.parse(source)
+  val result = parser.parse(removeComment(source))
 
   println(result)
 
@@ -39,6 +43,11 @@ object MyLisp extends App {
   installGlobalFunctions(env)
 
   new MyLispVisitor().visit(result.get, env)
+
+  /**
+   * Removes comment.
+   */
+  private def removeComment(source: String): String = source.replaceAll(";.*", "")
 
   /**
    * Defines global functions.
