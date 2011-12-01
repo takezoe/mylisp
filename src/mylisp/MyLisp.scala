@@ -41,11 +41,11 @@ object MyLisp extends App {
     env.set("-", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ - _ } })
     env.set("*", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ * _ } })
     env.set("/", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ / _ } })
-    env.set("eql", operator2(_ == _))
-    env.set("<=", operator2(_ <= _))
-    env.set(">=", operator2(_ >= _))
-    env.set("<", operator2(_ < _))
-    env.set(">", operator2(_ > _))
+    env.set("eql", operator2( { (a, b) => if(a == b) Symbol.T else Symbol.Nil }))
+    env.set("<=", operator2({ (a, b) => if(a <= b) Symbol.T else Symbol.Nil }))
+    env.set(">=", operator2({ (a, b) => if(a >= b) Symbol.T else Symbol.Nil }))
+    env.set("<", operator2({ (a, b) => if(a < b) Symbol.T else Symbol.Nil }))
+    env.set(">", operator2({ (a, b) => if(a > b) Symbol.T else Symbol.Nil }))
 
     def operator2(f: (Int, Int) => Any): List[Any] => Any = {
       (params: List[Any]) => {
