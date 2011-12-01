@@ -20,6 +20,14 @@ object MyLisp extends App {
 
     (setq name "Naoki")
     (println name)
+
+    (setq l '(1 2 3 4))
+    (println l)
+
+    (setq l (list 1 2 3 4))
+    (println (cons 0 l))
+    (println (cdr (cons 0 l)))
+    (println (car (cons 0 l)))
   """
 
   val parser = new MyLispParser
@@ -46,6 +54,25 @@ object MyLisp extends App {
     env.set(">=", operator2({ (a, b) => if(a >= b) Symbol.T else Symbol.NIL }))
     env.set("<", operator2({ (a, b) => if(a < b) Symbol.T else Symbol.NIL }))
     env.set(">", operator2({ (a, b) => if(a > b) Symbol.T else Symbol.NIL }))
+    env.set("list", { params: List[Any] => params })
+    env.set("cons", { params: List[Any] =>
+      params match {
+        case List(first: Any, list: List[Any]) => first :: list
+        case _ => throw new IllegalArgumentException(params.toString())
+      }
+    })
+    env.set("car", { params: List[Any] =>
+      params match {
+        case List(e: List[Any]) => e.head
+        case _ => throw new IllegalArgumentException(params.toString())
+      }
+    })
+    env.set("cdr", { params: List[Any] =>
+      params match {
+        case List(e: List[Any]) => e.tail
+        case _ => throw new IllegalArgumentException(params.toString())
+      }
+    })
 
     def operator2(f: (Int, Int) => Any): List[Any] => Any = {
       (params: List[Any]) => {

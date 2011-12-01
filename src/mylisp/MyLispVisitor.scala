@@ -1,4 +1,5 @@
 package mylisp
+import scala.collection.JavaConversions._
 
 class MyLispVisitor() {
 
@@ -36,6 +37,7 @@ class MyLispVisitor() {
       }
       case ASTIntVal(value) => value
       case ASTStrVal(value) => value
+      case ASTListVal(elements) => elements.map { visit(_, env) }.toList
       case ASTIdent(name) => env.get(name)
       case ASTDefun(name, func) => env.set(name.name, func)
       case ASTProgn(exprs) => {

@@ -12,3 +12,4 @@ case class ASTIf(cond:AST, expr1:AST, expr2:AST) extends AST
 case class ASTProgn(exprs: List[AST]) extends AST
 case class ASTSetq(name: ASTIdent, expr: AST) extends AST
 case class ASTSymbol(value: String) extends AST
+case class ASTListVal(elements: List[AST]) extends AST

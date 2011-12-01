@@ -23,13 +23,15 @@ class MyLispParser extends RegexParsers {
     case(cond~expr1~expr2) => ASTIf(cond, expr1, expr2)
   }
 
+  def list: Parser[AST] = "'("~>rep(value)<~")"^^ASTListVal
+
   def expr: Parser[AST] = defun|setq|`if`|progn|("(" ~> ident ~ opt(rep(value)) <~ ")" )^^{
     case(ident~params) => {
       ASTExpr(ident.asInstanceOf[ASTIdent], params.get)
     }
   }
 
-  def value: Parser[AST] = expr|symbol|intLiteral|stringLiteral|ident
+  def value: Parser[AST] = expr|symbol|intLiteral|stringLiteral|ident|list
 
   def progn: Parser[AST] = "(progn"~>rep(value)<~")"^^{ exprs => ASTProgn(exprs) }
 
