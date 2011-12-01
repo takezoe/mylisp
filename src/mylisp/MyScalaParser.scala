@@ -5,9 +5,22 @@ import scala.collection.mutable.{Map => MutableMap}
 object MyLispParser extends App {
 
   val source = """
-    (defun sayHello (name) (println "Hello " name "!"))
-    (defun sum (a b)(if (eql a b) a (sum (+ a 1) b)))
-    (println (sum 1 1000))
+    (defun factorial (n acc)
+      (if (<= n 1)
+        acc
+      (factorial (- n 1) (* acc n))))
+
+    (defun sum (a b)
+      (if (eql a 0)
+        b
+        (sum (- a 1) (+ b a))))
+
+    (println (factorial 10 1))
+    (println (sum 10000 1))
+    (println (+ 1 2 3 4))
+
+    (setq name "Naoki")
+    (println name)
   """
 
   val parser = new MyLispParser
@@ -19,11 +32,15 @@ object MyLispParser extends App {
 
   // define global functions
   env.set("println", { params: List[Any] => println(params.mkString) })
-  env.set("+", operator2(_ + _))
-  env.set("-", operator2(_ - _))
-  env.set("*", operator2(_ * _))
-  env.set("/", operator2(_ / _))
+  env.set("+", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ + _ } })
+  env.set("-", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ - _ } })
+  env.set("*", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ * _ } })
+  env.set("/", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ / _ } })
   env.set("eql", operator2(_ == _))
+  env.set("<=", operator2(_ <= _))
+  env.set(">=", operator2(_ >= _))
+  env.set("<", operator2(_ < _))
+  env.set(">", operator2(_ > _))
 
   new ExprVisitor().visit(ast, env)
 
@@ -31,13 +48,13 @@ object MyLispParser extends App {
       (params: List[Any]) => {
         params match {
           case List(a: Int, b: Int) => f(a, b)
-          case _ => throw new Exception("Invalid arguments.")
+          case _ => throw new Exception("Invalid arguments: %s".format(params))
         }
       }
   }
 }
 
-class Environment(parent:Option[Environment] = None){
+class Environment(parent:Option[Environment] = None, val context: Option[Any] = None, last: Boolean = true){
 
   val variables = MutableMap[String, Any]()
 
@@ -47,7 +64,7 @@ class Environment(parent:Option[Environment] = None){
     } else {
       parent match {
         case Some(p) => p.get(key)
-        case None => throw new Exception("symbol'%s' not found".format(key))
+        case None => throw new Exception("symbol '%s' not found".format(key))
       }
     }
   }
@@ -58,18 +75,29 @@ class Environment(parent:Option[Environment] = None){
 }
 
 class ExprVisitor() {
-  def visit(ast:AST, env: Environment):Any = {
+
+  // tail call optimization
+  class TCO(val proc: AST, val args: List[Ident], val params: List[AST])
+
+  def visit(ast:AST, env: Environment, last: Boolean = true): Any = {
     ast match {
       case Expr(ident, params) => {
         env.get(ident.name) match {
           case f: Func => {
-            val local = new Environment(Some(env))
-            f.params.zip(params.map(visit(_, env))).foreach { case(variable, value) =>
-              local.set(variable.name, value)
+            if(env.context.orNull == f && last){
+              new TCO(f.proc, f.params, params)
+            } else {
+              val local = new Environment(Some(env), Some(f))
+              f.params.zip(params.map(visit(_, env))).foreach { case(variable, value) =>
+                local.set(variable.name, value)
+              }
+              processTCO(visit(f.proc, local), local)
             }
-            visit(f.proc, local)
           }
-          case f: ((List[Any]) => Any) => f(params.map(visit(_, env)))
+          case f: ((List[Any]) => Any) => {
+            val local = new Environment(Some(env), Some(f))
+            f(params.map({ e => visit(e, local) }))
+          }
           case _ => throw new Exception("function '%s' not found.".format(ident.name))
         }
       }
@@ -85,9 +113,31 @@ class ExprVisitor() {
       case BooleanVal(value) => value
       case Ident(name) => env.get(name)
       case Defun(name, func) => env.set(name.name, func)
-      case Program(exprs) => exprs.foreach(visit(_, env))
+      case Progn(exprs) => {
+        val last = exprs.last
+        exprs.map({ e => visit(e, env, last == e) }).last
+      }
+      case Setq(name, value) => {
+        env.set(name.name, visit(value, env))
+      }
     }
   }
+
+  def processTCO(value: Any, env: Environment): Any = {
+    var result: Any = value
+    while(result.isInstanceOf[TCO]){
+      result match {
+        case tco: TCO => {
+          tco.args.zip(tco.params.map(visit(_, env))).foreach { case(variable, value) =>
+            env.set(variable.name, value)
+          }
+          result = visit(tco.proc, env)
+        }
+      }
+    }
+    result
+  }
+
 }
 
 trait AST
@@ -99,11 +149,12 @@ case class Expr(name: Ident, params:List[AST]) extends AST
 case class Defun(name: Ident, func: Func) extends AST
 case class Func(params:List[Ident], proc:AST) extends AST
 case class If(cond:AST, expr1:AST, expr2:AST) extends AST
-case class Program(exprs: List[AST]) extends AST
+case class Progn(exprs: List[AST]) extends AST
+case class Setq(name: Ident, expr: AST) extends AST
 
 class MyLispParser extends RegexParsers {
 
-  def ident :Parser[Ident] = """[A-Za-z_+\-*/][a-zA-Z0-9]*""".r^?{
+  def ident :Parser[Ident] = """[A-Za-z_][a-zA-Z0-9]*|\+|-|\*|/|<=|>=|<|>""".r^?{
     case n if n != "defun" && n != "if" => n
   }^^Ident
 
@@ -112,8 +163,6 @@ class MyLispParser extends RegexParsers {
   def booleanLiteral : Parser[AST] = ("true"|"false")^^{ value => BooleanVal(value.toBoolean) }
 
   def stringLiteral : Parser[AST] = "\""~>"""[a-zA-Z0-9:*/+\- !]*""".r<~"\""^^StrVal
-
-  def value: Parser[AST] = expr|intLiteral|stringLiteral|booleanLiteral|ident
 
   def defun: Parser[AST] = ("(defun" ~> ident ~"("~ opt(rep(ident)) ~ ")" ~ expr <~")")^^{
     case(ident~_~params~_~proc) => {
@@ -124,13 +173,20 @@ class MyLispParser extends RegexParsers {
   def `if`: Parser[AST] = ("(if" ~> value ~ value ~ value <~ ")")^^{
     case(cond~expr1~expr2) => If(cond, expr1, expr2)
   }
-  def expr: Parser[AST] = defun|`if`|("(" ~> ident ~ opt(rep(value)) <~ ")" )^^{
+
+  def expr: Parser[AST] = defun|setq|`if`|progn|("(" ~> ident ~ opt(rep(value)) <~ ")" )^^{
     case(ident~params) => {
       Expr(ident.asInstanceOf[Ident], params.get)
     }
   }
 
-  def program: Parser[AST] = rep(expr)^^{ exprs => Program(exprs) }
+  def value: Parser[AST] = expr|intLiteral|stringLiteral|booleanLiteral|ident
+
+  def progn: Parser[AST] = "(progn"~>rep(value)<~")"^^{ exprs => Progn(exprs) }
+
+  def setq: Parser[AST] = "(setq"~>ident~value<~")"^^{ case(ident~value) => Setq(ident, value) }
+
+  def program: Parser[AST] = rep(expr)^^{ exprs => Progn(exprs) }
 
   def parse(str:String) = parseAll(program, str)
 
