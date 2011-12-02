@@ -13,9 +13,9 @@ class MyLispParser extends RegexParsers {
 
   def symbol: Parser[AST] = ("nil"|"t")^^ASTSymbol
 
-  def defun: Parser[AST] = ("(defun" ~> ident ~"("~ opt(rep(ident)) ~ ")" ~ expr <~")")^^{
+  def defun: Parser[AST] = ("(defun" ~> ident ~"("~ opt(rep(ident)) ~ ")" ~ rep(expr) <~")")^^{
     case(ident~_~params~_~proc) => {
-      ASTDefun(ident.asInstanceOf[ASTIdent], ASTFunc(params.get.asInstanceOf[List[ASTIdent]], proc))
+      ASTDefun(ident.asInstanceOf[ASTIdent], ASTFunc(params.get.asInstanceOf[List[ASTIdent]], ASTProgn(proc)))
     }
   }
 
