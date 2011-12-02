@@ -8,6 +8,7 @@ class MyLispVisitor() {
 
   def visit(ast:AST, env: Environment, last: Boolean = true): Any = {
     ast match {
+      // expression
       case ASTExpr(ident, params) => {
         env.get(ident.name) match {
           case f: ASTFunc => {
@@ -28,8 +29,9 @@ class MyLispVisitor() {
           case _ => throw new Exception("function '%s' not found.".format(ident.name))
         }
       }
+      // if
       case ASTIf(cond, expr1, expr2) => {
-        if(visit(cond, env) != Symbol.NIL){
+        if(visit(cond, env) != Nil){
           visit(expr1, env)
         } else {
           visit(expr2, env)
@@ -39,15 +41,25 @@ class MyLispVisitor() {
       case ASTStrVal(value) => value
       case ASTListVal(elements) => elements.map { visit(_, env) }.toList
       case ASTIdent(name) => env.get(name)
+      // defun
       case ASTDefun(name, func) => env.set(name.name, func)
+      // progn
       case ASTProgn(exprs) => {
         val last = exprs.last
         exprs.map({ e => visit(e, env, last == e) }).last
       }
+      // setq
       case ASTSetq(name, value) => {
         env.set(name.name, visit(value, env))
       }
-      case ASTSymbol(value) => Symbol.withName(value.toUpperCase())
+      // symbol
+      case ASTSymbol(value) => {
+        if(value == "nil"){
+          Nil
+        } else {
+          Symbol.withName(value.toUpperCase())
+        }
+      }
     }
   }
 

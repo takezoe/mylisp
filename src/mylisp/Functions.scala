@@ -11,18 +11,18 @@ object Functions {
     env.set("-", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ - _ } })
     env.set("*", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ * _ } })
     env.set("/", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ / _ } })
-    env.set("eql", operator2( { (a, b) => if(a == b) Symbol.T else Symbol.NIL }))
-    env.set("<=", operator2({ (a, b) => if(a <= b) Symbol.T else Symbol.NIL }))
-    env.set(">=", operator2({ (a, b) => if(a >= b) Symbol.T else Symbol.NIL }))
-    env.set("<", operator2({ (a, b) => if(a < b) Symbol.T else Symbol.NIL }))
-    env.set(">", operator2({ (a, b) => if(a > b) Symbol.T else Symbol.NIL }))
+    env.set("eql", operator2( { (a, b) => if(a == b) Symbol.T else Nil }))
+    env.set("<=", operator2({ (a, b) => if(a <= b) Symbol.T else Nil }))
+    env.set(">=", operator2({ (a, b) => if(a >= b) Symbol.T else Nil }))
+    env.set("<", operator2({ (a, b) => if(a < b) Symbol.T else Nil }))
+    env.set(">", operator2({ (a, b) => if(a > b) Symbol.T else Nil }))
     env.set("list", { params: List[Any] => params })
     env.set("listp", { params: List[Any] =>
       params match {
         case List(e) => e match {
-          case Symbol.NIL => Symbol.T
+          case Nil => Symbol.T
           case list: List[Any] => Symbol.T
-          case _ => Symbol.NIL
+          case _ => Nil
         }
         case _ => throw new IllegalArgumentException(params.toString())
       }
@@ -30,9 +30,9 @@ object Functions {
     env.set("null", { params: List[Any] =>
       params match {
         case List(e) => e match {
-          case Symbol.NIL => Symbol.T
+          case Nil => Symbol.T
           case list: List[Any] if list.isEmpty => Symbol.T
-          case _ => Symbol.NIL
+          case _ => Nil
         }
         case _ => throw new IllegalArgumentException(params.toString())
       }
@@ -46,13 +46,13 @@ object Functions {
     })
     env.set("car", { params: List[Any] =>
       params match {
-        case List(e: List[Any]) => e.head
+        case List(e: List[Any]) => if(e.isEmpty) Nil else e.head
         case _ => throw new IllegalArgumentException(params.toString())
       }
     })
     env.set("cdr", { params: List[Any] =>
       params match {
-        case List(e: List[Any]) => e.tail
+        case List(e: List[Any]) => if(e.isEmpty) Nil else e.tail
         case _ => throw new IllegalArgumentException(params.toString())
       }
     })
