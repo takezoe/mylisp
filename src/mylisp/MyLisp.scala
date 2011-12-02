@@ -34,6 +34,8 @@ object MyLisp extends App {
     (println (null nil))
     (println (not '(1 2)))
     (println (listp '(1 2 3)))
+
+    (println (append '(1 2) '(3 4) '(5 6)))
   """
 
   println(eval(source))

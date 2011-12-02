@@ -27,6 +27,12 @@ object Functions {
         case _ => throw new IllegalArgumentException(params.toString())
       }
     })
+    env.set("append", { params: List[Any] =>
+      params match {
+        case list: List[List[Any]] => list.flatMap { e => e }.toList
+        case _ => throw new IllegalArgumentException(params.toString())
+      }
+    })
     env.set("null", { params: List[Any] =>
       params match {
         case List(e) => e match {
