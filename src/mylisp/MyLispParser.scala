@@ -25,7 +25,7 @@ class MyLispParser extends RegexParsers {
 
   def list: Parser[AST] = "'("~>rep(value)<~")"^^ASTListVal
 
-  def expr: Parser[AST] = defun|setf|`if`|progn|("(" ~> ident ~ opt(rep(value)) <~ ")" )^^{
+  def expr: Parser[AST] = defun|setf|`if`|let|progn|("(" ~> ident ~ opt(rep(value)) <~ ")" )^^{
     case(ident~params) => {
       ASTExpr(ident.asInstanceOf[ASTIdent], params.get)
     }
@@ -37,7 +37,14 @@ class MyLispParser extends RegexParsers {
 
   def setf: Parser[AST] = "(setf"~>ident~value<~")"^^{ case(ident~value) => ASTSetf(ident, value) }
 
+  def `var`: Parser[AST] = (ident|("("~>ident~value<~")"))^^{
+    case (ident~value) =>ASTVar(ident.asInstanceOf[ASTIdent], Some(value.asInstanceOf[AST]))
+    case (ident) => ASTVar(ident.asInstanceOf[ASTIdent], None)
+  }
 
+  def let: Parser[AST] = "(let"~"("~>rep(`var`)~")"~rep(value)<~")"^^{
+    case (vars~_~exprs) => ASTLet(vars.asInstanceOf[List[ASTVar]], ASTProgn(exprs))
+  }
 
   def program: Parser[AST] = rep(expr)^^{ exprs => ASTProgn(exprs) }
 

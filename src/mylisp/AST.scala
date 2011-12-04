@@ -13,3 +13,5 @@ case class ASTProgn(exprs: List[AST]) extends AST
 case class ASTSetf(name: ASTIdent, expr: AST) extends AST
 case class ASTSymbol(value: String) extends AST
 case class ASTListVal(elements: List[AST]) extends AST
+case class ASTVar(name: ASTIdent, value: Option[AST]) extends AST
+case class ASTLet(vars: List[ASTVar], proc: ASTProgn) extends AST

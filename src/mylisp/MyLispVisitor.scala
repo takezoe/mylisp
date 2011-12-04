@@ -49,6 +49,18 @@ class MyLispVisitor() {
         val last = exprs.last
         exprs.map({ e => visit(e, env, last == e) }).last
       }
+      // let
+      case ASTLet(vars, progn) => {
+        val local = new Environment(Some(env), Some(ast)) // TODO context is right?
+        vars.foreach { v =>
+          local.define(v.name.name, true)
+          v.value match {
+            case Some(x) => local.set(v.name.name, visit(x, env))
+            case None =>
+          }
+        }
+        visit(progn, local)
+      }
       // setq
       case ASTSetf(name, value) => {
         env.set(name.name, visit(value, env))
