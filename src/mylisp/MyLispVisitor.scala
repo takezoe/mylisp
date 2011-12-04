@@ -50,7 +50,7 @@ class MyLispVisitor() {
         exprs.map({ e => visit(e, env, last == e) }).last
       }
       // setq
-      case ASTSetq(name, value) => {
+      case ASTSetf(name, value) => {
         env.set(name.name, visit(value, env))
       }
       // symbol
