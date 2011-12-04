@@ -17,6 +17,7 @@ class MyLispVisitor() {
             } else {
               val local = new Environment(Some(env), Some(f))
               f.params.zip(params.map(visit(_, env))).foreach { case(variable, value) =>
+                local.define(variable.name, true)
                 local.set(variable.name, value)
               }
               processTCO(visit(f.proc, local), local)

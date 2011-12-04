@@ -16,7 +16,20 @@ class Environment(parent:Option[Environment] = None, val context: Option[Any] = 
     }
   }
 
-  def set(key:String, value:Any){
-    variables(key) = value
+  def set(key:String, value:Any): Unit = {
+    if(variables.contains(key) || parent == None){
+      variables(key) = value
+    } else {
+      parent.get.set(key, value)
+    }
   }
+
+  def define(key: String, local: Boolean): Unit = {
+    if(local || parent == None){
+      variables.put(key, Nil)
+    } else {
+      parent.get.define(key, local)
+    }
+  }
+
 }
