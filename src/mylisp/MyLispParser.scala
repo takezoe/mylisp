@@ -3,7 +3,7 @@ import scala.util.parsing.combinator.RegexParsers
 
 class MyLispParser extends RegexParsers {
 
-  def ident :Parser[ASTIdent] = """[A-Za-z_][a-zA-Z0-9]*|\+|-|\*|/|<=|>=|<|>""".r^?{
+  def ident :Parser[ASTIdent] = """[A-Za-z_][a-zA-Z0-9!]*|\+|-|\*|/|<=|>=|<|>""".r^?{
     case n if n != "defun" && n != "if" => n
   }^^ASTIdent
 
@@ -11,11 +11,17 @@ class MyLispParser extends RegexParsers {
 
   def stringLiteral : Parser[AST] = "\""~>"""[a-zA-Z0-9:*/+\- !]*""".r<~"\""^^ASTStrVal
 
-  def symbol: Parser[AST] = ("nil"|"t")^^ASTSymbol
+  def symbol: Parser[AST] = "'"~>ident^^{ value => ASTSymbol(value.name) }|("nil"|"t")^^ASTSymbol
 
   def defun: Parser[AST] = ("(defun" ~> ident ~"("~ opt(rep(ident)) ~ ")" ~ rep(expr) <~")")^^{
     case(ident~_~params~_~proc) => {
       ASTDefun(ident.asInstanceOf[ASTIdent], ASTFunc(params.get.asInstanceOf[List[ASTIdent]], ASTProgn(proc)))
+    }
+  }
+
+  def defmacro: Parser[AST] = ("(defmacro" ~> ident ~"("~ opt(rep(ident)) ~ ")" ~ rep(expr) <~")")^^{
+    case(ident~_~params~_~proc) => {
+      ASTDefMacro(ident.asInstanceOf[ASTIdent], ASTFunc(params.get.asInstanceOf[List[ASTIdent]], ASTProgn(proc), true))
     }
   }
 
@@ -25,7 +31,7 @@ class MyLispParser extends RegexParsers {
 
   def list: Parser[AST] = "'("~>rep(value)<~")"^^ASTListVal
 
-  def expr: Parser[AST] = defun|setf|`if`|let|progn|("(" ~> ident ~ opt(rep(value)) <~ ")" )^^{
+  def expr: Parser[AST] = defun|defmacro|setf|`if`|let|progn|("(" ~> ident ~ opt(rep(value)) <~ ")" )^^{
     case(ident~params) => {
       ASTExpr(ident.asInstanceOf[ASTIdent], params.get)
     }
@@ -50,4 +56,5 @@ class MyLispParser extends RegexParsers {
 
   def parse(str:String) = parseAll(program, str)
 
+  def parseExpression(str:String) = parseAll(expr, str)
 }

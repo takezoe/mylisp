@@ -13,14 +13,27 @@ class MyLispVisitor() {
         env.get(ident.name) match {
           case f: ASTFunc => {
             if(env.context.orNull == f && last){
+              // TODO tailcall for macro
               new TCO(f.proc, f.params, params)
             } else {
               val local = new Environment(Some(env), Some(f))
-              f.params.zip(params.map(visit(_, env))).foreach { case(variable, value) =>
-                local.define(variable.name, true)
-                local.set(variable.name, value)
+              if(f.macro == true){
+                f.params.zip(params).foreach { case(variable, value) =>
+                  local.define(variable.name, true)
+                  local.set(variable.name, value)
+                }
+                val result = processTCO(visit(f.proc, local), local)
+                val parser = new MyLispParser
+                val expr = parser.parseExpression(Functions.format(result))
+                visit(expr.get, env)
+
+              } else {
+                f.params.zip(params.map(visit(_, env))).foreach { case(variable, value) =>
+                  local.define(variable.name, true)
+                  local.set(variable.name, value)
+                }
+                processTCO(visit(f.proc, local), local)
               }
-              processTCO(visit(f.proc, local), local)
             }
           }
           case f: ((List[Any]) => Any) => {
@@ -44,6 +57,8 @@ class MyLispVisitor() {
       case ASTIdent(name) => env.get(name)
       // defun
       case ASTDefun(name, func) => env.set(name.name, func)
+      // defmacro
+      case ASTDefMacro(name, func) => env.set(name.name, func)
       // progn
       case ASTProgn(exprs) => {
         val last = exprs.last
@@ -61,7 +76,7 @@ class MyLispVisitor() {
         }
         visit(progn, local)
       }
-      // setq
+      // setf
       case ASTSetf(name, value) => {
         env.set(name.name, visit(value, env))
       }
@@ -70,7 +85,11 @@ class MyLispVisitor() {
         if(value == "nil"){
           Nil
         } else {
-          Symbol.withName(value.toUpperCase())
+          try {
+            DefaultSymbol.withName(value.toUpperCase())
+          } catch {
+            case ex: NoSuchElementException => UserSymbol(value)
+          }
         }
       }
     }

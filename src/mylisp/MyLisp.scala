@@ -16,14 +16,22 @@ object MyLisp extends App {
         (sum (- a 1) (+ b a))))
 
     (factorial 10 1)
+
+    (defmacro nil! (var)
+      (list 'setf var nil))
+
+    (setf x "Hello World!")
+    (nil! x)
+    (println x)
   """
 
-  println(eval(source))
+  println(Functions.format(eval(source)))
 
   def eval(source: String): Any = {
     val parser = new MyLispParser
     val result = parser.parse(removeComment(source))
 
+    // TODO for debug
     println(result)
 
     val env = new Environment()
@@ -34,5 +42,4 @@ object MyLisp extends App {
 
   private def removeComment(source: String): String =
     source.replaceAll(";.*", "")
-
 }

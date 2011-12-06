@@ -6,22 +6,22 @@ object Functions {
    * Defines global functions.
    */
   def installGlobalFunctions(env: Environment): Unit = {
-    env.set("println", { params: List[Any] => println(params.mkString) })
+    env.set("println", { params: List[Any] => println(params.map(format).mkString) })
     env.set("+", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ + _ } })
     env.set("-", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ - _ } })
     env.set("*", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ * _ } })
     env.set("/", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ / _ } })
-    env.set("eql", operator2( { (a, b) => if(a == b) Symbol.T else Nil }))
-    env.set("<=", operator2({ (a, b) => if(a <= b) Symbol.T else Nil }))
-    env.set(">=", operator2({ (a, b) => if(a >= b) Symbol.T else Nil }))
-    env.set("<", operator2({ (a, b) => if(a < b) Symbol.T else Nil }))
-    env.set(">", operator2({ (a, b) => if(a > b) Symbol.T else Nil }))
+    env.set("eql", operator2( { (a, b) => if(a == b) DefaultSymbol.T else Nil }))
+    env.set("<=", operator2({ (a, b) => if(a <= b) DefaultSymbol.T else Nil }))
+    env.set(">=", operator2({ (a, b) => if(a >= b) DefaultSymbol.T else Nil }))
+    env.set("<", operator2({ (a, b) => if(a < b) DefaultSymbol.T else Nil }))
+    env.set(">", operator2({ (a, b) => if(a > b) DefaultSymbol.T else Nil }))
     env.set("list", { params: List[Any] => params })
     env.set("listp", { params: List[Any] =>
       params match {
         case List(e) => e match {
-          case Nil => Symbol.T
-          case list: List[Any] => Symbol.T
+          case Nil => DefaultSymbol.T
+          case list: List[Any] => DefaultSymbol.T
           case _ => Nil
         }
         case _ => throw new IllegalArgumentException(params.toString())
@@ -36,8 +36,8 @@ object Functions {
     env.set("null", { params: List[Any] =>
       params match {
         case List(e) => e match {
-          case Nil => Symbol.T
-          case list: List[Any] if list.isEmpty => Symbol.T
+          case Nil => DefaultSymbol.T
+          case list: List[Any] if list.isEmpty => DefaultSymbol.T
           case _ => Nil
         }
         case _ => throw new IllegalArgumentException(params.toString())
@@ -70,6 +70,14 @@ object Functions {
           case _ => throw new Exception("Invalid arguments: %s".format(params))
         }
       }
+    }
+  }
+
+  def format(obj: Any): String = {
+    obj match {
+      case Nil => "nil"
+      case list: List[_] => list.map(format).mkString("(", " ", ")")
+      case x => x.toString()
     }
   }
 
