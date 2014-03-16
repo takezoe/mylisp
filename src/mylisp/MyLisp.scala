@@ -29,15 +29,15 @@ object MyLisp extends App {
 
   def eval(source: String): Any = {
     val parser = new MyLispParser
-    val result = parser.parse(removeComment(source))
+    val result = parser.parse("(" + removeComment(source) + ")")
 
     // TODO for debug
     println(result)
 
-    val env = new Environment()
-    Functions.installGlobalFunctions(env)
-
-    new MyLispVisitor().visit(result.get, env)
+//    val env = new Environment()
+//    Functions.installGlobalFunctions(env)
+//
+//    new MyLispVisitor().visit(result.get, env)
   }
 
   private def removeComment(source: String): String =
