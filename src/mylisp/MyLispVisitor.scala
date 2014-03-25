@@ -7,6 +7,33 @@ class MyLispVisitor() {
   class TCO(val proc: AST, val args: List[ASTIdent], val params: List[AST])
 
   def visit(ast:AST, env: Environment, last: Boolean = true): Any = {
+    ast match {
+      case ASTIntVal(value)  => value
+      case ASTStrVal(value)  => value
+      case ASTList(elements) => elements match {
+        case (ident: ASTIdent) :: params => {
+          env.get(ident.name) match {
+            case f: ((List[Any]) => Any) => {
+              val local = new Environment(Some(env), Some(f))
+              f(params.map({ e => visit(e, local) }))
+            }
+            case _ => throw new Exception("function '%s' not found.".format(ident.name))
+          }
+        }
+      }
+      case ASTIdent(name)    => env.get(name)
+      case ASTSymbol(value) => {
+        if(value == "nil"){
+          Nil
+        } else {
+          try {
+            DefaultSymbol.withName(value.toUpperCase())
+          } catch {
+            case ex: NoSuchElementException => UserSymbol(value)
+          }
+        }
+      }
+    }
 //    ast match {
 //      // expression
 //      case ASTExpr(ident, params) => {

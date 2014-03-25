@@ -6,6 +6,7 @@ object Functions {
    * Defines global functions.
    */
   def installGlobalFunctions(env: Environment): Unit = {
+    env.set("progn", { params: List[Any] => params.last })
     env.set("println", { params: List[Any] => println(params.map(format).mkString) })
     env.set("+", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ + _ } })
     env.set("-", { params: List[Any] => params.asInstanceOf[List[Int]].reduceLeft { _ - _ } })
