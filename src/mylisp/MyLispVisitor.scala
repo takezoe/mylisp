@@ -8,11 +8,38 @@ class MyLispVisitor() {
 
   def visit(ast:AST, env: Environment, last: Boolean = true): Any = {
     ast match {
+      case ASTDefun(name, func)    => env.set(name.name, func)
+      case ASTDefMacro(name, func) => env.set(name.name, func)
       case ASTIntVal(value)  => value
       case ASTStrVal(value)  => value
       case ASTList(elements) => elements match {
         case (ident: ASTIdent) :: params => {
           env.get(ident.name) match {
+            case f: ASTFunc => {
+              if(env.context.orNull == f && last){
+                // TODO tailcall for macro
+                new TCO(f.proc, f.params, params)
+              } else {
+                val local = new Environment(Some(env), Some(f))
+                if(f.macro == true){
+                  f.params.zip(params).foreach { case(variable, value) =>
+                    local.define(variable.name, true)
+                    local.set(variable.name, value)
+                  }
+                  val result = processTCO(visit(f.proc, local), local)
+                  val parser = new MyLispParser
+                  val expr = parser.parse(Functions.format(result))
+                  visit(expr.get, env)
+
+                } else {
+                  f.params.zip(params.map(visit(_, env))).foreach { case(variable, value) =>
+                    local.define(variable.name, true)
+                    local.set(variable.name, value)
+                  }
+                  processTCO(visit(f.proc, local), local)
+                }
+              }
+            }
             case f: ((List[Any]) => Any) => {
               val local = new Environment(Some(env), Some(f))
               f(params.map({ e => visit(e, local) }))
@@ -20,6 +47,7 @@ class MyLispVisitor() {
             case _ => throw new Exception("function '%s' not found.".format(ident.name))
           }
         }
+        case _ => throw new Exception("Invalid expression: " + ast)
       }
       case ASTIdent(name)    => env.get(name)
       case ASTSymbol(value) => {
@@ -122,16 +150,16 @@ class MyLispVisitor() {
 //    }
   }
 
-//  private def processTCO(value: Any, env: Environment): Any = {
-//    var result: Any = value
-//    while(result.isInstanceOf[TCO]){
-//      val tco = result.asInstanceOf[TCO]
-//      tco.args.zip(tco.params.map(visit(_, env))).foreach { case(variable, value) =>
-//        env.set(variable.name, value)
-//      }
-//      result = visit(tco.proc, env)
-//    }
-//    result
-//  }
+  private def processTCO(value: Any, env: Environment): Any = {
+    var result: Any = value
+    while(result.isInstanceOf[TCO]){
+      val tco = result.asInstanceOf[TCO]
+      tco.args.zip(tco.params.map(visit(_, env))).foreach { case(variable, value) =>
+        env.set(variable.name, value)
+      }
+      result = visit(tco.proc, env)
+    }
+    result
+  }
 
 }

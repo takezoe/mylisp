@@ -13,8 +13,20 @@ class MyLispParser extends RegexParsers {
 
   def list: Parser[AST] = "("~>rep(value)<~")"^^ASTList
 
-  def value: Parser[AST] = list|symbol|intLiteral|stringLiteral|ident
+  def value: Parser[AST] = defun|defmacro|list|symbol|intLiteral|stringLiteral|ident
 
+  def defun: Parser[AST] = ("(defun" ~> ident ~"("~ opt(rep(ident)) ~ ")" ~ list <~")")^^{
+    case(ident~_~params~_~list) => {
+      ASTDefun(ident.asInstanceOf[ASTIdent], ASTFunc(params.get.asInstanceOf[List[ASTIdent]], list))
+    }
+  }
+
+  def defmacro: Parser[AST] = ("(defmacro" ~> ident ~"("~ opt(rep(ident)) ~ ")" ~ list <~")")^^{
+    case(ident~_~params~_~list) => {
+      ASTDefMacro(ident.asInstanceOf[ASTIdent], ASTFunc(params.get.asInstanceOf[List[ASTIdent]], list, true))
+    }
+  }
+  
   def parse(str:String) = parseAll(list, str)
   
 }

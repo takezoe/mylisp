@@ -12,3 +12,6 @@ case class ASTSymbol(value: String) extends AST
 case class ASTList(elements: List[AST]) extends AST {
   override def toString(): String = elements.mkString("ASTList(", ", ", ")")
 }
+case class ASTDefun(name: ASTIdent, func: ASTFunc) extends AST
+case class ASTDefMacro(name: ASTIdent, func: ASTFunc) extends AST
+case class ASTFunc(params:List[ASTIdent], proc:AST, macro: Boolean = false) extends AST
