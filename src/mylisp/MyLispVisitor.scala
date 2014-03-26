@@ -1,7 +1,7 @@
 package mylisp
 import scala.collection.JavaConversions._
 
-class MyLispVisitor() {
+object MyLispVisitor {
 
   // tail call optimization
   class TCO(val proc: AST, val args: List[Arg], val params: List[AST])
@@ -50,16 +50,20 @@ class MyLispVisitor() {
                 }
               }
             }
-            case f: ((List[Any]) => Any) => {
+            case f: EmbedFunction => {
               val local = new Environment(Some(env), Some(f))
-              f(params.map({ e => visit(e, local) }))
+              f.invoke(params.map({ e => visit(e, local) }), env)
+            }
+            case f: EmbedMacro => {
+              val local = new Environment(Some(env), Some(f))
+              f.invoke(params, env)
             }
             case _ => throw new Exception(s"function '${ident.name}' not found.")
           }
         }
         case _ => throw new Exception(s"Invalid expression: ${ast}")
       }
-      case ASTIdent(name)    => env.get(name)
+      case ASTIdent(name)   => env.get(name)
       case ASTSymbol(value) => {
         if(value == "nil"){
           Nil

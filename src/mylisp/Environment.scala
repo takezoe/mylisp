@@ -1,7 +1,7 @@
 package mylisp
 import scala.collection.mutable.{Map => MutableMap}
 
-class Environment(parent:Option[Environment] = None, val context: Option[Any] = None, last: Boolean = true){
+class Environment(val parent:Option[Environment] = None, val context: Option[Any] = None, last: Boolean = true){
 
   val variables = MutableMap[String, Any]()
 

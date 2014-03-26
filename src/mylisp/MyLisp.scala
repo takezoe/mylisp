@@ -5,10 +5,17 @@ object MyLisp extends App {
 
   val source = """
     ; recursive function
-    (defun hello1 (x) (println x))
-    (defun hello2 (x &rest z) (progn (println x) (println z)))
-    (hello1 "Hello MyLisp!")
-    (hello2 "Hello MyLisp!" 1 2 3)
+    ;(defun hello1 (x) (println x))
+    ;(defun hello2 (x &rest z) (progn (println x) (println z)))
+    ;(hello1 "Hello MyLisp!")
+    ;(hello2 "Hello MyLisp!" 1 2 3)
+    
+    (defmacro nil! (var)
+      (list 'setf var nil))
+
+    (setf x "Hello World!")
+    (nil! x)
+    (println x)
   """
 
   println(Functions.format(eval(source)))
@@ -23,7 +30,7 @@ object MyLisp extends App {
     val env = new Environment()
     Functions.installGlobalFunctions(env)
 
-    new MyLispVisitor().visit(result.get, env)
+    MyLispVisitor.visit(result.get, env)
   }
 
   private def removeComment(source: String): String =
