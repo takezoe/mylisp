@@ -4,7 +4,7 @@ import scala.collection.JavaConversions._
 class MyLispVisitor() {
 
   // tail call optimization
-  class TCO(val proc: AST, val args: List[ASTIdent], val params: List[AST])
+  class TCO(val proc: AST, val args: List[Arg], val params: List[AST])
 
   def visit(ast:AST, env: Environment, last: Boolean = true): Any = {
     ast match {
@@ -22,9 +22,14 @@ class MyLispVisitor() {
               } else {
                 val local = new Environment(Some(env), Some(f))
                 if(f.macro == true){
-                  f.params.zip(params).foreach { case(variable, value) =>
+                  val fixArgs = f.params.filter(_.rest == false)
+                  fixArgs.zip(params).foreach { case(variable, value) =>
                     local.define(variable.name, true)
                     local.set(variable.name, value)
+                  }
+                  f.params.find(_.rest == true).foreach { variable =>
+                    local.define(variable.name, true)
+                    local.set(variable.name, params.drop(fixArgs.size))
                   }
                   val result = processTCO(visit(f.proc, local), local)
                   val parser = new MyLispParser
@@ -32,9 +37,14 @@ class MyLispVisitor() {
                   visit(expr.get, env)
 
                 } else {
-                  f.params.zip(params.map(visit(_, env))).foreach { case(variable, value) =>
+                  val fixArgs = f.params.filter(_.rest == false)
+                  fixArgs.zip(params.map(visit(_, env))).foreach { case(variable, value) =>
                     local.define(variable.name, true)
                     local.set(variable.name, value)
+                  }
+                  f.params.find(_.rest == true).foreach { variable =>
+                    local.define(variable.name, true)
+                    local.set(variable.name, params.drop(fixArgs.size).map(visit(_, env)))
                   }
                   processTCO(visit(f.proc, local), local)
                 }
@@ -44,10 +54,10 @@ class MyLispVisitor() {
               val local = new Environment(Some(env), Some(f))
               f(params.map({ e => visit(e, local) }))
             }
-            case _ => throw new Exception("function '%s' not found.".format(ident.name))
+            case _ => throw new Exception(s"function '${ident.name}' not found.")
           }
         }
-        case _ => throw new Exception("Invalid expression: " + ast)
+        case _ => throw new Exception(s"Invalid expression: ${ast}")
       }
       case ASTIdent(name)    => env.get(name)
       case ASTSymbol(value) => {

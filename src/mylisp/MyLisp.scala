@@ -5,8 +5,10 @@ object MyLisp extends App {
 
   val source = """
     ; recursive function
-    (defun hello (x) (println x))
-    (hello "Hello MyLisp!")
+    (defun hello1 (x) (println x))
+    (defun hello2 (x &rest z) (progn (println x) (println z)))
+    (hello1 "Hello MyLisp!")
+    (hello2 "Hello MyLisp!" 1 2 3)
   """
 
   println(Functions.format(eval(source)))

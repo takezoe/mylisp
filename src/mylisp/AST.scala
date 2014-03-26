@@ -14,4 +14,6 @@ case class ASTList(elements: List[AST]) extends AST {
 }
 case class ASTDefun(name: ASTIdent, func: ASTFunc) extends AST
 case class ASTDefMacro(name: ASTIdent, func: ASTFunc) extends AST
-case class ASTFunc(params:List[ASTIdent], proc:AST, macro: Boolean = false) extends AST
+case class ASTFunc(params:List[Arg], proc:AST, macro: Boolean = false) extends AST
+
+case class Arg(name: String, rest: Boolean = false)
